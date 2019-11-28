@@ -67,7 +67,6 @@ if TRAIN:
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 torch.set_default_tensor_type('torch.cuda.FloatTensor') 
 
-
 # Networks
 C_X = Critic()   # Criticizes X data
 C_Y = Critic()   # Criticizes Y data
@@ -332,7 +331,7 @@ def infer(iteration, style, img_name, in_img_dir, out_rec_dir, out_sty_dir, img_
         # Load parameters from checkpoint paths
         loaded_G = torch.load(g_model_path, map_location=device)
         loaded_F = torch.load(f_model_path, map_location=device) 
-        
+            
         # Do some dark magic so Pytorch loads model saved with DataParallel
         from collections import OrderedDict
         new_loaded_G = OrderedDict()
@@ -346,7 +345,7 @@ def infer(iteration, style, img_name, in_img_dir, out_rec_dir, out_sty_dir, img_
        
         G.load_state_dict(loaded_G)
         F.load_state_dict(loaded_F)
-        
+
         # Status
         print(f"Inference: Loaded the checkpoints from {iteration}th iteration.")
     except:
@@ -378,7 +377,7 @@ def infer(iteration, style, img_name, in_img_dir, out_rec_dir, out_sty_dir, img_
     # style_a = image_loader(out_img_path)
     in_img_path = os.path.join(in_img_dir, img_name)
     in_img = image_loader(in_img_path)
-    
+   
     with torch.no_grad():
         print("Stylization")
         sty_img = F(in_img)     # Y -> X

@@ -56,7 +56,7 @@ IMG_NAME = "sun_flower.jpg"
 IN_IMG_DIR = "images"
 OUT_STY_DIR = "sty"
 OUT_REC_DIR = "rec"
-IMG_SIZE = None  # If `None` then stylizes original size `IMG_NAME`
+IMG_SIZE = 50  # If `None` then stylizes original size `IMG_NAME`
 
 # Logs
 ITERS_PER_LOG = 100
