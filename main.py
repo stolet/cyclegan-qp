@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 
 __author__ = "Rahul Bhalley"
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
-
+import torch.distributed as dist
 import torchvision.utils as vutils
+import torch.multiprocessing as mp
+from torch.nn.parallel import DistributedDataParallel
 
 from networks import Generator, Critic
 
 from config import *
 from data import *
-
 import os
 
 
@@ -65,12 +65,26 @@ if TRAIN:
 
 # Automatic GPU/CPU device placement
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+torch.set_default_tensor_type('torch.cuda.FloatTensor') 
+
 
 # Networks
-C_X = Critic().to(device)   # Criticizes X data
-C_Y = Critic().to(device)   # Criticizes Y data
-G = Generator(upsample=UPSAMPLE).to(device) # Translates X -> Y
-F = Generator(upsample=UPSAMPLE).to(device) # Translates Y -> X
+C_X = Critic()   # Criticizes X data
+C_Y = Critic()   # Criticizes Y data
+G = Generator(upsample=UPSAMPLE) # Translates X -> Y
+F = Generator(upsample=UPSAMPLE) # Translates Y -> X
+
+C_X = C_X.to(device)
+C_Y = C_Y.to(device)
+G = G.to(device)
+F = F.to(device)
+
+if torch.cuda.device_count() > 1:
+    print("Training on more than one GPU")
+    C_X = nn.DataParallel(C_X, device_ids=[0, 1])
+    C_Y = nn.DataParallel(C_Y, device_ids=[0, 1])
+    G = nn.DataParallel(G, device_ids=[0, 1])
+    F = nn.DataParallel(F, device_ids=[0, 1])
 
 # Losses
 l1_loss = nn.L1Loss()
@@ -133,7 +147,8 @@ def train():
         for param in C_Y.parameters():
             param.requires_grad_(True)
 
-        for j in range(2):
+        # Default range is 2
+        for j in range(4):
 
             # Forward passes:
             # ∙ X -> Y
@@ -183,9 +198,11 @@ def train():
             # Compute gradients
             c_loss.backward()
 
-            # Update the networks
-            C_Y_optim.step()
-            C_X_optim.step()
+        # Update the networks
+        # Do multiple forward and backward passes before doing a single
+        # optimizer step. Reduces mem usage so we can increase batch size.
+        C_Y_optim.step()
+        C_X_optim.step()
 
         ####################
         # Train Generators #
@@ -203,7 +220,8 @@ def train():
         for param in C_Y.parameters():
             param.requires_grad_(False)
 
-        for j in range(1):
+        # Default range is 1
+        for j in range(2):
 
             # Forward passes:
             # ∙ X -> Y
@@ -263,9 +281,11 @@ def train():
             # Compute gradients
             g_loss.backward()
 
-            # Update the networks
-            G_optim.step()
-            F_optim.step()
+        # Update the networks
+        # Do multiple forward and backward passes before doing a single
+        # optimizer step. Reduces mem usage so we can increase batch size.
+        G_optim.step()
+        F_optim.step()
 
         #############
         # Log stats #
@@ -303,16 +323,32 @@ def infer(iteration, style, img_name, in_img_dir, out_rec_dir, out_sty_dir, img_
     # Set neural nets to evaluation mode
     G.eval()
     F.eval()
+    G.to()
+    F.to()
 
     # Try loading models from checkpoints at `iteration`
     try:
         # Get checkpoint paths
         g_model_path = os.path.join(CKPT_DIR, style, f"G_{iteration}.pth")
         f_model_path = os.path.join(CKPT_DIR, style, f"F_{iteration}.pth")
-        
+         
         # Load parameters from checkpoint paths
-        G.load_state_dict(torch.load(g_model_path, map_location=device))
-        F.load_state_dict(torch.load(f_model_path, map_location=device))
+        loaded_G = torch.load(g_model_path, map_location=device)
+        loaded_F = torch.load(f_model_path, map_location=device) 
+        
+        # Do some dark magic so Pytorch loads model saved with DataParallel
+        from collections import OrderedDict
+        new_loaded_G = OrderedDict()
+        for k, v in loaded_G.items():
+            name = k[7:] # remove `module.`
+            new_loaded_G[name] = v
+        new_loaded_F = OrderedDict()
+        for k, v in loaded_F.items():
+            name = k[7:] # remove `module.`
+            new_loaded_F[name] = v
+       
+        G.load_state_dict(loaded_G)
+        F.load_state_dict(loaded_F)
         
         # Status
         print(f"Inference: Loaded the checkpoints from {iteration}th iteration.")
@@ -372,7 +408,6 @@ def infer(iteration, style, img_name, in_img_dir, out_rec_dir, out_sty_dir, img_
     # Status
     print(f"Saved {rec_path}")
     print(f"Saved {sty_path}")
-
 
 if __name__ == "__main__":
     

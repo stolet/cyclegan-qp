@@ -4,8 +4,8 @@ __author__ = "Rahul Bhalley"
 
 # Data
 DATASET_DIR = "datasets"
-DATASET_NAME = "vangogh2photo"
-STYLES = ["ce", "mo", "uk", "vg"]
+DATASET_NAME = "ukiyoe2photo"
+STYLES = [ "uk" ]
 # Set up `TRAIN_STYLE`
 if DATASET_NAME == "cezanne2photo":
     TRAIN_STYLE = "ce"
@@ -22,7 +22,8 @@ DATASET_PATH = {
     "testB": f"./{DATASET_DIR}/{DATASET_NAME}/testB"
 }
 LOAD_DIM = 286
-CROP_DIM = 256
+#CROP_DIM = 256
+CROP_DIM = 40
 CKPT_DIR = "checkpoints"
 SAMPLE_DIR = "samples"
 
@@ -41,16 +42,16 @@ UPSAMPLE = True
 # Training
 RANDOM_SEED = 12345
 BATCH_SIZE = 4
-LR = 2e-4
+LR = 6e-4
 BETA1 = 0.5
 BETA2 = 0.999
-BEGIN_ITER = 0
-END_ITER = 15000
+BEGIN_ITER = 2000
+END_ITER = 2000
 TRAIN = False  # `False` runs `infer` function & `True` runs `train` function
 
 # Inference
-INFER_ITER = 15000
-INFER_STYLE = "vg"
+INFER_ITER = 2000
+INFER_STYLE = "uk"
 IMG_NAME = "sun_flower.jpg"
 IN_IMG_DIR = "images"
 OUT_STY_DIR = "sty"
