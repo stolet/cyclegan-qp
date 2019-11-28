@@ -319,12 +319,9 @@ def train():
 ################
 
 def infer(iteration, style, img_name, in_img_dir, out_rec_dir, out_sty_dir, img_size=None):
-    
     # Set neural nets to evaluation mode
     G.eval()
     F.eval()
-    G.to()
-    F.to()
 
     # Try loading models from checkpoints at `iteration`
     try:
