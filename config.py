@@ -36,7 +36,7 @@ CYC_WEIGHT = 10.0
 ID_WEIGHT = 0.5
 
 # Network
-N_CHANNELS = 3
+N_CHANNELS = 1
 UPSAMPLE = True
 
 # Training
@@ -49,14 +49,18 @@ BEGIN_ITER = 2000
 END_ITER = 2000
 TRAIN = False  # `False` runs `infer` function & `True` runs `train` function
 
+#overwrite
+BEGIN_ITER = 0
+TRAIN = True  # `False` runs `infer` function & `True` runs `train` function
+
 # Inference
-INFER_ITER = 2000
+INFER_ITER = 0
 INFER_STYLE = "uk"
 IMG_NAME = "sun_flower.jpg"
 IN_IMG_DIR = "images"
 OUT_STY_DIR = "sty"
 OUT_REC_DIR = "rec"
-IMG_SIZE = 50  # If `None` then stylizes original size `IMG_NAME`
+IMG_SIZE = None  # If `None` then stylizes original size `IMG_NAME`
 
 # Logs
 ITERS_PER_LOG = 100
